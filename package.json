@@ -1,0 +1,22 @@
+{
+  "name": "ems",
+  "version": "1.0.0",
+  "description": "Expense Managament System",
+  "main": "index.js",
+  "scripts": {
+    "test": "index"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rajanshahsa/EMS.git"
+  },
+  "keywords": [
+    "EMS"
+  ],
+  "author": "Rajan Shah & Deepak Kumar Singh",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/rajanshahsa/EMS/issues"
+  },
+  "homepage": "https://github.com/rajanshahsa/EMS#readme"
+}
