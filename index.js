@@ -91,7 +91,7 @@ app.post("/user/signUp", function (req, res) {
                 let token = jwt.sign(req.body.emailId, "secret");
                 let sha256 = crypto.createHash("sha256");
                 sha256.update(req.body.password, "utf8");//utf8 here
-                var encryptedPassword = sha256.digest("hex");
+                let encryptedPassword = sha256.digest("hex");
                 let user1 = { username: req.body.username, password: encryptedPassword, sex: req.body.sex, dob: req.body.dob, mobileNo: req.body.mobileNo, emailId: req.body.emailId };
                 collection.find({ emailId: req.body.emailId }).count(function (e, count) {
                     if (count <= 0) {
@@ -179,7 +179,7 @@ app.post("/user/login", function (req, res) {
                 let EMS = db.collection('User');
                 let sha256 = crypto.createHash("sha256");
                 sha256.update(req.body.password, "utf8");//utf8 here
-                var encryptedPassword = sha256.digest("hex");
+                let encryptedPassword = sha256.digest("hex");
                 console.log(encryptedPassword);
                 let result = EMS.find({ $and: [{ emailId: req.body.emailId }, { password: encryptedPassword }] }).toArray(function (err, result) {
                     if (err) {
@@ -348,16 +348,16 @@ app.get("/user/forgotPassword", function (req, res) {
 
 function sendEmail(req, res, receiverEmail) {
     // Not the movie transporter!
-    var transporter = nodemailer.createTransport({
+    let transporter = nodemailer.createTransport({
         service: 'Gmail',
         auth: {
             user: 'email', // Your email id
             pass: 'password' // Your password
         }
     });
-    var text = 'Hello world from EMS \n\n';
+    let text = 'Hello world from EMS \n\n';
 
-    var mailOptions = {
+    let mailOptions = {
         from: 'example@gmail.com', // sender address
         to: receiverEmail, // list of receivers
         subject: 'Email Example', // Subject line
