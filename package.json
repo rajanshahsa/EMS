@@ -18,5 +18,8 @@
   "bugs": {
     "url": "https://github.com/rajanshahsa/EMS/issues"
   },
-  "homepage": "https://github.com/rajanshahsa/EMS#readme"
+  "homepage": "https://github.com/rajanshahsa/EMS#readme",
+  "dependencies": {
+    "sha256": "^0.2.0"
+  }
 }

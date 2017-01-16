@@ -1,9 +1,16 @@
 let express = require("express");
 let bodyParser = require("body-parser");
 let app = express();
+let jwt = require('jsonwebtoken');
+let MongoClient = require('mongodb').MongoClient;
+let crypto = require("crypto");
+
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
+let validator = require('validator');
+
 
 let server = app.listen(3000, function () {
     console.log("Listening on port %s...", server.address().port);
@@ -18,56 +25,108 @@ app.post("/user/signUp", function (req, res) {
             dob : 19-10-1990,
             mobileNo : 9377929445
     */
-    if (!req.body.username || !req.body.password || !req.body.sex || !req.body.dob || !req.body.mobileNo || !req.body.emailId) {
-        return res.send({ "status": "error", "message": "missing a parameter" });
-    } else {
-        let jwt = require('jsonwebtoken');
-        // Retrieve
-        let MongoClient = require('mongodb').MongoClient;
+    if (!req.body.username) {
+        let body = {
+            message: "username required",
+            status: 0
+        }
+        return res.send(body);
+    }
+    else if (!req.body.password) {
+        let body = {
+            message: "Password required",
+            status: 0
+        }
+        return res.send(body);
+    }
+    else if (!req.body.sex) {
+        let body = {
+            message: "Sex required",
+            status: 0
+        }
+        return res.send(body);
+    }
+    else if (!req.body.mobileNo) {
+        let body = {
+            message: "Mobile No required",
+            status: 0
+        }
+        return res.send(body);
+    }
+    else if (!req.body.emailId) {
+        let body = {
+            message: "E-Mail Id required",
+            status: 0
+        }
+        return res.send(body);
+    }
+    else if (!validator.isEmail(req.body.emailId)) {
+        let body = {
+            message: "Invalid E-Mail Id",
+            status: 0
+        }
+        return res.send(body);
+    }
+    else if (req.body.dob === Date) {
+        let body = {
+            message: "Type of date of birth is invalid",
+            status: 0
+        }
+        return res.send(body);
+    }
+    else if (req.body.mobileNo === Number) {
+        let body = {
+            message: "Type of mobile Number is invalid",
+            status: 0
+        }
+        return res.send(body);
+    }
+    else {
         // Connect to the db
         MongoClient.connect("mongodb://127.0.0.1:27017/EMS", function (err, db) {
             if (!err) {
                 let collection = db.collection('User');
                 //Create some users
                 let token = jwt.sign(req.body.emailId, "secret");
-                let user1 = { username: req.body.username, password: req.body.password, sex: req.body.sex, dob: req.body.dob, mobileNo: req.body.mobileNo, emailId: req.body.emailId };
-
-
-                let count = collection.find({ emailId: req.body.emailId }).count()
-                if (count == 0) {
-                    // Insert some users
-                    collection.insert([user1], function (err, result) {
-                        if (err) {
-                            console.log(err);
-                        } else {
-                            let data = {
-                                userId: result._id,
-                                username: req.body.username,
-                                emailId: req.body.emailId,
-                                sex: req.body.sex,
-                                dob: req.body.dob,
-                                mobileNo: req.body.mobileNo,
+                let sha256 = crypto.createHash("sha256");
+                sha256.update(req.body.password, "utf8");//utf8 here
+                var encryptedPassword = sha256.digest("hex");
+                let user1 = { username: req.body.username, password: encryptedPassword, sex: req.body.sex, dob: req.body.dob, mobileNo: req.body.mobileNo, emailId: req.body.emailId };
+                collection.find({ emailId: req.body.emailId }).count(function (e, count) {
+                    if (count <= 0) {
+                        // Insert some users
+                        collection.insert([user1], function (err, result) {
+                            if (err) {
+                                console.log(err);
+                            } else {
+                                let data = {
+                                    userId: result._id,
+                                    username: req.body.username,
+                                    emailId: req.body.emailId,
+                                    sex: req.body.sex,
+                                    dob: req.body.dob,
+                                    mobileNo: req.body.mobileNo,
+                                }
+                                let body = {
+                                    xAuthToken: token,
+                                    data: data,
+                                    message: "valid user",
+                                    status: 1
+                                }
+                                return res.send(body)
                             }
-                            let body = {
-                                xAuthToken: token,
-                                data: data,
-                                message: "valid user",
-                                status: 1
-                            }
-                            return res.send(body)
-                        }
-                        //Close connection
-                        db.close();
-                    });
-                }
-                else {
-                    let body = {
-                        message: "User already exists",
-                        status: 0
+                            //Close connection
+                            db.close();
+                        });
                     }
-                    return res.send(body)
-                }
-
+                    else {
+                        let body = {
+                            message: "User already exists",
+                            status: 0
+                        }
+                        return res.send(body)
+                    }
+                });
             }
             else {
                 console.log(err)
@@ -89,23 +148,45 @@ app.post("/user/login", function (req, res) {
     }
     }"
     */
-    if (!req.body.emailId || !req.body.password) {
-        return res.send({ "status": "error", "message": "missing a parameter" });
-    } else {
-        let jwt = require('jsonwebtoken');
+    if (!req.body.emailId) {
+        let body = {
+            message: "emailId required",
+            status: 0
+        }
+        return res.send(body);
+    }
+    else if (!req.body.password) {
+        let body = {
+            message: "Password required",
+            status: 0
+        }
+        return res.send(body);
+    }
+    else if (!validator.isEmail(req.body.emailId)) {
+        let body = {
+            message: "Invalide E-Mail Id",
+            status: 0
+        }
+        return res.send(body);
+    }
+    else {
         let token = jwt.sign(req.body.emailId, "secret");
-        // Retrieve
-        let MongoClient = require('mongodb').MongoClient;
         // Connect to the db
+
         MongoClient.connect("mongodb://127.0.0.1:27017/EMS", function (err, db) {
             if (!err) {
                 let EMS = db.collection('User');
-                let result = EMS.find({ $and: [{ emailId: req.body.emailId }, { password: req.body.password }] }).toArray(function (err, result) {
+                let sha256 = crypto.createHash("sha256");
+                sha256.update(req.body.password, "utf8");//utf8 here
+                var encryptedPassword = sha256.digest("hex");
+                console.log(encryptedPassword);
+                let result = EMS.find({ $and: [{ emailId: req.body.emailId }, { password: encryptedPassword }] }).toArray(function (err, result) {
                     if (err) {
                         let body = {
                             message: "Error occurred",
                             status: 0
                         }
+                        req.status = 500
                         db.close();
                         return res.send(body)
                     } else if (result.length) {
@@ -147,8 +228,6 @@ app.post("/user/login", function (req, res) {
 
 app.get("/user/getUser", function (req, res) {
     if (req.get("xAuthToken")) {
-        // Retrieve
-        let MongoClient = require('mongodb').MongoClient;
         // Connect to the db
         MongoClient.connect("mongodb://127.0.0.1:27017/EMS", function (err, db) {
             if (!err) {
@@ -159,11 +238,11 @@ app.get("/user/getUser", function (req, res) {
                             message: "Error occurred",
                             status: 0
                         }
+                        req.status = 500
                         db.close();
                         return res.send(body)
                     } else if (result.length) {
                         let token = req.get("xAuthToken")
-                        let jwt = require('jsonwebtoken');
                         let decoded = jwt.decode(token, { complete: true });
                         let userArray = []
                         for (let i = 0; i < result.length; i++) {
@@ -177,8 +256,6 @@ app.get("/user/getUser", function (req, res) {
                                 }
                                 userArray.push(data);
                             }
-
-
                         }
 
                         let body = {
@@ -211,6 +288,7 @@ app.get("/user/getUser", function (req, res) {
             message: "Unauthorised Request",
             status: 0
         }
+        res.status = 403;
         return res.send(body)
     }
 
