@@ -9,10 +9,6 @@ var server = app.listen(3000, function () {
     console.log("Listening on port %s...", server.address().port);
 });
 
-
-
-
-
 app.post("/user/signUp", function (req, res) {
 
     /*
@@ -35,7 +31,7 @@ app.post("/user/signUp", function (req, res) {
                 //Create some users
                 var token = jwt.sign(req.body.emailId, "secret");
                 console.log(token);
-                var user1 = { username: req.body.username, password: req.body.password, sex: req.body.sex, dob: req.body.dob, mobileNo: req.body.mobileNo, emailId: req.body.emailId};
+                var user1 = { username: req.body.username, password: req.body.password, sex: req.body.sex, dob: req.body.dob, mobileNo: req.body.mobileNo, emailId: req.body.emailId };
 
                 // Insert some users
                 collection.insert([user1], function (err, result) {
@@ -144,4 +140,67 @@ app.post("/user/login", function (req, res) {
     }
 });
 
+app.get("/user/getUser", function (req, res) {
+    // Retrieve
+    var MongoClient = require('mongodb').MongoClient;
+    // Connect to the db
+    MongoClient.connect("mongodb://127.0.0.1:27017/EMS", function (err, db) {
+        if (!err) {
+            var EMS = db.collection('User');
+            var result = EMS.find({}).toArray(function (err, result) {
+                if (err) {
+                    var body = {
+                        message: "Error occurred",
+                        status: 0
+                    }
+                    db.close();
+                    return res.send(body)
 
+                    console.log(err);
+                } else if (result.length) {
+                    var token = req.get("xAuthToken")
+                    var jwt = require('jsonwebtoken');
+                    var decoded = jwt.decode(token, { complete: true });
+                    var userArray = []
+                    for (var i = 0; i < result.length; i++) {
+                        if (decoded.payload !== result[i].emailId) {
+                            var data = {
+                                username: result[i].username,
+                                emailId: result[i].emailId,
+                                sex: result[i].sex,
+                                dob: result[i].dob,
+                                mobileNo: result[i].mobileNo
+                            }
+                            userArray.push(data);
+                        }
+
+
+                    }
+
+                    var body = {
+                        data: userArray,
+                        message: "Success",
+                        status: 1
+                    }
+                    db.close();
+                    return res.send(body)
+                } else {
+                    var body = {
+                        message: 'No user found',
+                        status: 0
+                    }
+                    db.close();
+                    return res.send(body)
+
+                    console.log('No document(s) found with defined "find" criteria!');
+                }
+                //Close connection
+                db.close();
+            });
+
+        }
+        else {
+            console.log(err)
+        }
+    });
+});
