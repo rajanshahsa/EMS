@@ -32,30 +32,42 @@ app.post("/user/signUp", function (req, res) {
                 let token = jwt.sign(req.body.emailId, "secret");
                 let user1 = { username: req.body.username, password: req.body.password, sex: req.body.sex, dob: req.body.dob, mobileNo: req.body.mobileNo, emailId: req.body.emailId };
 
-                // Insert some users
-                collection.insert([user1], function (err, result) {
-                    if (err) {
-                        console.log(err);
-                    } else {
-                        let data = {
-                            userId: result._id,
-                            username: req.body.username,
-                            emailId: req.body.emailId,
-                            sex: req.body.sex,
-                            dob: req.body.dob,
-                            mobileNo: req.body.mobileNo,
+
+                let count = collection.find({ emailId: req.body.emailId }).count()
+                if (count == 0) {
+                    // Insert some users
+                    collection.insert([user1], function (err, result) {
+                        if (err) {
+                            console.log(err);
+                        } else {
+                            let data = {
+                                userId: result._id,
+                                username: req.body.username,
+                                emailId: req.body.emailId,
+                                sex: req.body.sex,
+                                dob: req.body.dob,
+                                mobileNo: req.body.mobileNo,
+                            }
+                            let body = {
+                                xAuthToken: token,
+                                data: data,
+                                message: "valid user",
+                                status: 1
+                            }
+                            return res.send(body)
                         }
-                        let body = {
-                            xAuthToken: token,
-                            data: data,
-                            message: "valid user",
-                            status: 1
-                        }
-                        return res.send(body)
+                        //Close connection
+                        db.close();
+                    });
+                }
+                else {
+                    let body = {
+                        message: "User already exists",
+                        status: 0
                     }
-                    //Close connection
-                    db.close();
-                });
+                    return res.send(body)
+                }
+
             }
             else {
                 console.log(err)
