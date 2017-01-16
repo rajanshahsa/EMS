@@ -4,6 +4,7 @@ let app = express();
 let jwt = require('jsonwebtoken');
 let MongoClient = require('mongodb').MongoClient;
 let crypto = require("crypto");
+let nodemailer = require('nodemailer');
 
 
 app.use(bodyParser.json());
@@ -293,3 +294,88 @@ app.get("/user/getUser", function (req, res) {
     }
 
 });
+
+
+app.get("/user/forgotPassword", function (req, res) {
+    if (req.get("xAuthToken")) {
+        // Connect to the db
+        MongoClient.connect("mongodb://127.0.0.1:27017/EMS", function (err, db) {
+            if (!err) {
+                let EMS = db.collection('User');
+                let token = req.get("xAuthToken")
+                let decoded = jwt.decode(token, { complete: true });
+                console.log(decoded.payload);
+                let result = EMS.find({ emailId: decoded.payload }).toArray(function (err, result) {
+                    if (err) {
+                        let body = {
+                            message: "Error occurred",
+                            status: 0
+                        }
+                        req.status = 500
+                        db.close();
+                        return res.send(body)
+                    } else if (result.length) {
+                        return sendEmail(req, res, result[0].emailId);
+                    } else {
+                        let body = {
+                            message: "Invalid Credentials",
+                            status: 0
+                        }
+                        db.close();
+                        return res.send(body)
+                    }
+                    //Close connection
+                    db.close();
+                });
+
+            }
+            else {
+                console.log(err)
+            }
+        });
+    }
+    else {
+        let body = {
+            message: "Unauthorised Request",
+            status: 0
+        }
+        res.status = 403;
+        return res.send(body)
+    }
+
+});
+
+
+function sendEmail(req, res, receiverEmail) {
+    // Not the movie transporter!
+    var transporter = nodemailer.createTransport({
+        service: 'Gmail',
+        auth: {
+            user: 'email', // Your email id
+            pass: 'password' // Your password
+        }
+    });
+    var text = 'Hello world from EMS \n\n';
+
+    var mailOptions = {
+        from: 'example@gmail.com', // sender address
+        to: receiverEmail, // list of receivers
+        subject: 'Email Example', // Subject line
+        text: text //, // plaintext body
+        // html: '<b>Hello world ✔</b>' // You can choose to send an HTML body instead
+    };
+
+    transporter.sendMail(mailOptions, function (error, info) {
+        if (error) {
+            console.log(error);
+            res.json({ yo: 'error' });
+        } else {
+            console.log('Message sent: ' + info.response);
+            let body = {
+                message: "Email sent successfully.",
+                status: 0
+            }
+            res.send(body);
+        };
+    });
+}
