@@ -50,48 +50,56 @@ app.post(process.env.SIGNUP_URL, function (req, res) {
             message: "username required",
             status: 0
         }
+        res.status = 400
         return res.send(body);
     } else if (!req.body.password) {
         let body = {
             message: "Password required",
             status: 0
         }
+        res.status = 400
         return res.send(body);
     } else if (!req.body.sex) {
         let body = {
             message: "Sex required",
             status: 0
         }
+        res.status = 400
         return res.send(body);
     } else if (!req.body.mobileNo) {
         let body = {
             message: "Mobile No required",
             status: 0
         }
+        res.status = 400
         return res.send(body);
     } else if (!req.body.emailId) {
         let body = {
             message: "E-Mail Id required",
             status: 0
         }
+        res.status = 400
         return res.send(body);
     } else if (!validator.isEmail(req.body.emailId)) {
         let body = {
             message: "Invalid E-Mail Id",
             status: 0
         }
+        res.status = 400
         return res.send(body);
     } else if (req.body.dob === Date) {
         let body = {
             message: "Type of date of birth is invalid",
             status: 0
         }
+        res.status = 400
         return res.send(body);
     } else if (req.body.mobileNo === Number) {
         let body = {
             message: "Type of mobile Number is invalid",
             status: 0
         }
+        res.status = 400
         return res.send(body);
     } else {
         
@@ -125,7 +133,8 @@ app.post(process.env.SIGNUP_URL, function (req, res) {
                             sex: req.body.sex,
                             dob: req.body.dob,
                             mobileNo: req.body.mobileNo,
-                        }
+                               userId: result.ops[0]._id
+                             }
                         let body = {
                             xAuthToken: token,
                             data: data,
@@ -167,18 +176,21 @@ app.post(process.env.LOGIN_URL, function (req, res) {
             message: "emailId required",
             status: 0
         }
+        res.status = 400
         return res.send(body);
     } else if (!req.body.password) {
         let body = {
             message: "Password required",
             status: 0
         }
+        res.status = 400
         return res.send(body);
     } else if (!validator.isEmail(req.body.emailId)) {
         let body = {
             message: "Invalide E-Mail Id",
             status: 0
         }
+        res.status = 400
         return res.send(body);
     } else {
         let token = jwt.sign(req.body.emailId, "secret");
@@ -212,7 +224,8 @@ app.post(process.env.LOGIN_URL, function (req, res) {
                             emailId: result[0].emailId,
                             sex: result[0].sex,
                             dob: result[0].dob,
-                            mobileNo: result[0].mobileNo
+                            mobileNo: result[0].mobileNo,
+                            userId: result[0]._id
                         }
                         let body = {
                             xAuthToken: token,
@@ -270,7 +283,8 @@ app.get(process.env.GET_USER, function (req, res) {
                                     emailId: result[i].emailId,
                                     sex: result[i].sex,
                                     dob: result[i].dob,
-                                    mobileNo: result[i].mobileNo
+                                    mobileNo: result[i].mobileNo,
+                                    userId: result[i]._id
                                 }
                                 userArray.push(data);
                             }
@@ -362,6 +376,122 @@ app.get(process.env.FORGET_PASSWORD_URL, function (req, res) {
 
 });
 
+app.post("/user/addExpense", function (req, res) {
+    if (req.get("xAuthToken")) {
+        /* title: "Dinner at 31- 12 - 2016",
+                 paidBy : 1,
+                         contributor : [
+                                 {
+                                         contributerId: 3,
+                                         amount: 80
+                                 },
+                                 {
+                                         contributerId: 1,
+                                         amount: 40
+                                 },
+                                 {
+                                         contributerId: 2,
+                                         amount: 30
+                                 },
+                         ],
+                                 amount : 150,*/
+
+        if (!req.body.title || !req.body.paidBy || !req.body.contributor || !req.body.date || !req.body.amount || !req.body.expenseType || !req.body.description) {
+            let body = {
+                message: "title missing",
+                status: 1
+            }
+            res.status = 400
+            res.send(body)
+        }
+        else if (!req.body.contributor) {
+            let body = {
+                message: "contributor missing",
+                status: 1
+            }
+            res.status = 400
+            res.send(body)
+        }
+        else if (!req.body.date) {
+            let body = {
+                message: "date missing",
+                status: 1
+            }
+            res.status = 400
+            res.send(body)
+        }
+        else if (!req.body.expenseType) {
+            let body = {
+                message: "expenseType missing",
+                status: 1
+            }
+            res.status = 400
+            res.send(body)
+        }
+        else if (!req.body.paidBy) {
+            let body = {
+                message: "paidBy missing",
+                status: 1
+            }
+            res.status = 400
+            res.send(body)
+        }
+        else {
+            // Retrieve
+            let MongoClient = require('mongodb').MongoClient;
+            // Connect to the db
+            MongoClient.connect("mongodb://127.0.0.1:27017/EMS", function (err, db) {
+                if (!err) {
+                    let expense = db.collection('Expense');
+                    //Create some users
+                    let addExpense = { title: req.body.title, paidBy: req.body.paidBy, contributor: req.body.contributor, date: req.body.date, amount: req.body.amount, expenseType: req.body.expenseType };
+                    // Insert some users
+                    expense.insert([addExpense], function (err, result) {
+                        if (err) {
+                            let body = {
+                                message: "Error occurred while inserting",
+                                status: 0
+                            }
+                            res.status = 500;
+                            res.send(body);
+                        } else {
+                            let insertedID = result.ops[0]._id;
+                            let user = db.collection('User');
+                            let contributor = req.body.contributor.replace(/'/g, '"');
+                            console.log(contributor);
+                            // contributor = JSON.parse(contributor);
+                            // console.log(contributor);
+                            for (let i = 0; i < req.body.contributor.count; i++) {
+                                let userId = req.body.contributor[i].id
+                                console.log("UserId" + userId);
+                                user.findOneAndUpdate({ _id: userId }, { $push: { transactionId: insertedID } });
+                            }
+                            let body = {
+                                message: "Expense added successfully",
+                                status: 1
+                            }
+                            res.send(body)
+                        }
+                        //Close connection
+                        db.close();
+                    });
+                }
+                else {
+                    console.log(err)
+                }
+                return res
+            });
+        }
+    }
+    else {
+        let body = {
+            message: "Unauthorised Request",
+            status: 0
+        }
+        res.status = 403;
+        return res.send(body)
+    }
+});
 
 function sendEmail(req, res, receiverEmail) {
     // Not the movie transporter!
