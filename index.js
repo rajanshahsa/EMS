@@ -5,19 +5,38 @@ let jwt = require('jsonwebtoken');
 let MongoClient = require('mongodb').MongoClient;
 let crypto = require("crypto");
 let nodemailer = require('nodemailer');
-
+let validator = require('validator');
+require('dotenv').config();
+require('./messages');
 
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.urlencoded({
+    extended: true
+}));
 
-let validator = require('validator');
+//Mongodb connection 
+let database = '';
+MongoClient.connect("mongodb://127.0.0.1:27017/EMS", function (err, db) {
+    if (!err) {
+        console.log('connected to database');
+        database = db
+    } else {
+        console.log('cannot connect to database', err);
+        server.close()
+    }
+});
 
 
-let server = app.listen(3000, function () {
+
+
+
+
+
+let server = app.listen(process.env.SERVER_PORT, function () {
     console.log("Listening on port %s...", server.address().port);
 });
 
-app.post("/user/signUp", function (req, res) {
+app.post(process.env.SIGNUP_URL, function (req, res) {
 
     /*
             userName : "rajan",
@@ -32,111 +51,105 @@ app.post("/user/signUp", function (req, res) {
             status: 0
         }
         return res.send(body);
-    }
-    else if (!req.body.password) {
+    } else if (!req.body.password) {
         let body = {
             message: "Password required",
             status: 0
         }
         return res.send(body);
-    }
-    else if (!req.body.sex) {
+    } else if (!req.body.sex) {
         let body = {
             message: "Sex required",
             status: 0
         }
         return res.send(body);
-    }
-    else if (!req.body.mobileNo) {
+    } else if (!req.body.mobileNo) {
         let body = {
             message: "Mobile No required",
             status: 0
         }
         return res.send(body);
-    }
-    else if (!req.body.emailId) {
+    } else if (!req.body.emailId) {
         let body = {
             message: "E-Mail Id required",
             status: 0
         }
         return res.send(body);
-    }
-    else if (!validator.isEmail(req.body.emailId)) {
+    } else if (!validator.isEmail(req.body.emailId)) {
         let body = {
             message: "Invalid E-Mail Id",
             status: 0
         }
         return res.send(body);
-    }
-    else if (req.body.dob === Date) {
+    } else if (req.body.dob === Date) {
         let body = {
             message: "Type of date of birth is invalid",
             status: 0
         }
         return res.send(body);
-    }
-    else if (req.body.mobileNo === Number) {
+    } else if (req.body.mobileNo === Number) {
         let body = {
             message: "Type of mobile Number is invalid",
             status: 0
         }
         return res.send(body);
-    }
-    else {
-        // Connect to the db
-        MongoClient.connect("mongodb://127.0.0.1:27017/EMS", function (err, db) {
-            if (!err) {
-                let collection = db.collection('User');
-                //Create some users
-                let token = jwt.sign(req.body.emailId, "secret");
-                let sha256 = crypto.createHash("sha256");
-                sha256.update(req.body.password, "utf8");//utf8 here
-                let encryptedPassword = sha256.digest("hex");
-                let user1 = { username: req.body.username, password: encryptedPassword, sex: req.body.sex, dob: req.body.dob, mobileNo: req.body.mobileNo, emailId: req.body.emailId };
-                collection.find({ emailId: req.body.emailId }).count(function (e, count) {
-                    if (count <= 0) {
-                        // Insert some users
-                        collection.insert([user1], function (err, result) {
-                            if (err) {
-                                console.log(err);
-                            } else {
-                                let data = {
-                                    userId: result._id,
-                                    username: req.body.username,
-                                    emailId: req.body.emailId,
-                                    sex: req.body.sex,
-                                    dob: req.body.dob,
-                                    mobileNo: req.body.mobileNo,
-                                }
-                                let body = {
-                                    xAuthToken: token,
-                                    data: data,
-                                    message: "valid user",
-                                    status: 1
-                                }
-                                return res.send(body)
-                            }
-                            //Close connection
-                            db.close();
-                        });
-                    }
-                    else {
+    } else {
+        
+        let collection = database.collection('User');
+        //Create some users
+        let token = jwt.sign(req.body.emailId,process.env.SECRET_KEY);
+        let sha256 = crypto.createHash("sha256");
+        sha256.update(req.body.password, "utf8"); //utf8 here
+        let encryptedPassword = sha256.digest("hex");
+        let user1 = {
+            username: req.body.username,
+            password: encryptedPassword,
+            sex: req.body.sex,
+            dob: req.body.dob,
+            mobileNo: req.body.mobileNo,
+            emailId: req.body.emailId
+        };
+        collection.find({
+            emailId: req.body.emailId
+        }).count(function (e, count) {
+            if (count <= 0) {
+                // Insert some users
+                collection.insert([user1], function (err, result) {
+                    if (err) {
+                        console.log(err);
+                    } else {
+                        let data = {
+                            userId: result._id,
+                            username: req.body.username,
+                            emailId: req.body.emailId,
+                            sex: req.body.sex,
+                            dob: req.body.dob,
+                            mobileNo: req.body.mobileNo,
+                        }
                         let body = {
-                            message: "User already exists",
-                            status: 0
+                            xAuthToken: token,
+                            data: data,
+                            message: VALID_USER,
+                            status: 1
                         }
                         return res.send(body)
                     }
-                });
-            }
-            else {
-                console.log(err)
+                 });
+            } else {
+                let body = {
+                    message: "User already exists",
+                    status: 0
+                }
+                return res.status(403).send(body)
             }
         });
+
+
+
     }
 });
 
-app.post("/user/login", function (req, res) {
+app.post(process.env.LOGIN_URL, function (req, res) {
     /*
     "{ message : ""Success"", status : 1, x-auth-token : XASDXSDFfdsfs, data : {
     userId : 1
@@ -155,22 +168,19 @@ app.post("/user/login", function (req, res) {
             status: 0
         }
         return res.send(body);
-    }
-    else if (!req.body.password) {
+    } else if (!req.body.password) {
         let body = {
             message: "Password required",
             status: 0
         }
         return res.send(body);
-    }
-    else if (!validator.isEmail(req.body.emailId)) {
+    } else if (!validator.isEmail(req.body.emailId)) {
         let body = {
             message: "Invalide E-Mail Id",
             status: 0
         }
         return res.send(body);
-    }
-    else {
+    } else {
         let token = jwt.sign(req.body.emailId, "secret");
         // Connect to the db
 
@@ -178,10 +188,16 @@ app.post("/user/login", function (req, res) {
             if (!err) {
                 let EMS = db.collection('User');
                 let sha256 = crypto.createHash("sha256");
-                sha256.update(req.body.password, "utf8");//utf8 here
+                sha256.update(req.body.password, "utf8"); //utf8 here
                 let encryptedPassword = sha256.digest("hex");
                 console.log(encryptedPassword);
-                let result = EMS.find({ $and: [{ emailId: req.body.emailId }, { password: encryptedPassword }] }).toArray(function (err, result) {
+                let result = EMS.find({
+                    $and: [{
+                        emailId: req.body.emailId
+                    }, {
+                        password: encryptedPassword
+                    }]
+                }).toArray(function (err, result) {
                     if (err) {
                         let body = {
                             message: "Error occurred",
@@ -218,8 +234,7 @@ app.post("/user/login", function (req, res) {
                     db.close();
                 });
 
-            }
-            else {
+            } else {
                 console.log(err)
             }
         });
@@ -227,7 +242,7 @@ app.post("/user/login", function (req, res) {
 
 });
 
-app.get("/user/getUser", function (req, res) {
+app.get(process.env.GET_USER, function (req, res) {
     if (req.get("xAuthToken")) {
         // Connect to the db
         MongoClient.connect("mongodb://127.0.0.1:27017/EMS", function (err, db) {
@@ -244,7 +259,9 @@ app.get("/user/getUser", function (req, res) {
                         return res.send(body)
                     } else if (result.length) {
                         let token = req.get("xAuthToken")
-                        let decoded = jwt.decode(token, { complete: true });
+                        let decoded = jwt.decode(token, {
+                            complete: true
+                        });
                         let userArray = []
                         for (let i = 0; i < result.length; i++) {
                             if (decoded.payload !== result[i].emailId) {
@@ -278,13 +295,11 @@ app.get("/user/getUser", function (req, res) {
                     db.close();
                 });
 
-            }
-            else {
+            } else {
                 console.log(err)
             }
         });
-    }
-    else {
+    } else {
         let body = {
             message: "Unauthorised Request",
             status: 0
@@ -296,16 +311,20 @@ app.get("/user/getUser", function (req, res) {
 });
 
 
-app.get("/user/forgotPassword", function (req, res) {
+app.get(process.env.FORGET_PASSWORD_URL, function (req, res) {
     if (req.get("xAuthToken")) {
         // Connect to the db
         MongoClient.connect("mongodb://127.0.0.1:27017/EMS", function (err, db) {
             if (!err) {
                 let EMS = db.collection('User');
                 let token = req.get("xAuthToken")
-                let decoded = jwt.decode(token, { complete: true });
+                let decoded = jwt.decode(token, {
+                    complete: true
+                });
                 console.log(decoded.payload);
-                let result = EMS.find({ emailId: decoded.payload }).toArray(function (err, result) {
+                let result = EMS.find({
+                    emailId: decoded.payload
+                }).toArray(function (err, result) {
                     if (err) {
                         let body = {
                             message: "Error occurred",
@@ -328,13 +347,11 @@ app.get("/user/forgotPassword", function (req, res) {
                     db.close();
                 });
 
-            }
-            else {
+            } else {
                 console.log(err)
             }
         });
-    }
-    else {
+    } else {
         let body = {
             message: "Unauthorised Request",
             status: 0
@@ -368,7 +385,9 @@ function sendEmail(req, res, receiverEmail) {
     transporter.sendMail(mailOptions, function (error, info) {
         if (error) {
             console.log(error);
-            res.json({ yo: 'error' });
+            res.json({
+                yo: 'error'
+            });
         } else {
             console.log('Message sent: ' + info.response);
             let body = {
