@@ -16,7 +16,7 @@ app.use(bodyParser.urlencoded({
 
 //Mongodb connection 
 let database = '';
-MongoClient.connect("mongodb://127.0.0.1:27017/EMS", function (err, db) {
+MongoClient.connect(process.env.MONGODB_URL, function (err, db) {
     if (!err) {
         console.log('connected to database');
         database = db
@@ -25,11 +25,6 @@ MongoClient.connect("mongodb://127.0.0.1:27017/EMS", function (err, db) {
         server.close()
     }
 });
-
-
-
-
-
 
 
 let server = app.listen(process.env.SERVER_PORT, function () {
