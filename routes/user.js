@@ -31,56 +31,56 @@ let appRouter = function (app) {
                 message: "username required",
                 status: 0
             }
-            res.status = 400
+            res.status(400)
             return res.send(body);
         } else if (!req.body.password) {
             let body = {
                 message: "Password required",
                 status: 0
             }
-            res.status = 400
+            res.status(400)
             return res.send(body);
         } else if (!req.body.sex) {
             let body = {
                 message: "Sex required",
                 status: 0
             }
-            res.status = 400
+            res.status(400)
             return res.send(body);
         } else if (!req.body.mobileNo) {
             let body = {
                 message: "Mobile No required",
                 status: 0
             }
-            res.status = 400
+            res.status(400)
             return res.send(body);
         } else if (!req.body.emailId) {
             let body = {
                 message: "E-Mail Id required",
                 status: 0
             }
-            res.status = 400
+            res.status(400)
             return res.send(body);
         } else if (!validator.isEmail(req.body.emailId)) {
             let body = {
                 message: "Invalid E-Mail Id",
                 status: 0
             }
-            res.status = 400
+            res.status(400)
             return res.send(body);
         } else if (req.body.dob === Date) {
             let body = {
                 message: "Type of date of birth is invalid",
                 status: 0
             }
-            res.status = 400
+            res.status(400)
             return res.send(body);
         } else if (req.body.mobileNo === Number) {
             let body = {
                 message: "Type of mobile Number is invalid",
                 status: 0
             }
-            res.status = 400
+            res.status(400)
             return res.send(body);
         } else {
 
@@ -96,11 +96,10 @@ let appRouter = function (app) {
                 sex: req.body.sex,
                 dob: req.body.dob,
                 mobileNo: req.body.mobileNo,
-                emailId: req.body.emailId
+                emailId: req.body.emailId,
+                transactionId: []
             };
-            collection.find({
-                emailId: req.body.emailId
-            }).count(function (e, count) {
+            collection.find({ emailId: req.body.emailId }).count(function (e, count) {
                 if (count <= 0) {
                     // Insert some users
                     collection.insert([user1], function (err, result) {
@@ -119,7 +118,7 @@ let appRouter = function (app) {
                             let body = {
                                 xAuthToken: token,
                                 data: data,
-                                message: VALID_USER,
+                                message: "User created",
                                 status: 1
                             }
                             return res.send(body)
@@ -157,21 +156,21 @@ let appRouter = function (app) {
                 message: "emailId required",
                 status: 0
             }
-            res.status = 400
+            res.status(400)
             return res.send(body);
         } else if (!req.body.password) {
             let body = {
                 message: "Password required",
                 status: 0
             }
-            res.status = 400
+            res.status(400)
             return res.send(body);
         } else if (!validator.isEmail(req.body.emailId)) {
             let body = {
                 message: "Invalide E-Mail Id",
                 status: 0
             }
-            res.status = 400
+            res.status(400)
             return res.send(body);
         } else {
             let token = jwt.sign(req.body.emailId, "secret");
@@ -209,18 +208,18 @@ let appRouter = function (app) {
                         message: "Success",
                         status: 1
                     }
-                   
+
                     return res.send(body)
                 } else {
                     let body = {
                         message: "Invalid Credentials",
                         status: 0
                     }
-                   
+
                     return res.send(body)
                 }
                 //Close connection
-               
+
             });
         }
 
@@ -236,7 +235,7 @@ let appRouter = function (app) {
                         status: 0
                     }
                     req.status(500)
-                   
+
                     return res.send(body)
                 } else if (result.length) {
                     let token = req.get("xAuthToken")
@@ -263,90 +262,72 @@ let appRouter = function (app) {
                         message: "Success",
                         status: 1
                     }
-                   
+
                     return res.send(body)
                 } else {
                     let body = {
                         message: 'No user found',
                         status: 0
                     }
-                   
+
                     return res.send(body)
                 }
                 //Close connection
-               
+
             });
         } else {
             let body = {
                 message: "Unauthorised Request",
                 status: 0
             }
-            res.status = 403;
+            res.status(403);
             return res.send(body)
         }
 
     });
 
-
-    app.get(process.env.FORGET_PASSWORD_URL, function (req, res) {
+    app.post(process.env.FORGET_PASSWORD_URL, function (req, res) {
         let EMS = database.collection('User');
-        let token = req.get("xAuthToken")
-        let decoded = jwt.decode(token, {
-            complete: true
-        });
-        console.log(decoded.payload);
-        let result = EMS.find({
-            emailId: decoded.payload
-        }).toArray(function (err, result) {
+        console.log(req.body.emailId);
+        let result = EMS.find({ emailId: req.body.emailId }).toArray(function (err, result) {
             if (err) {
                 let body = {
                     message: "Error occurred",
                     status: 0
                 }
                 req.status(500)
-               
+
                 return res.send(body)
             } else if (result.length) {
-                return sendEmail(req, res, result[0].emailId);
+                return sendEmail(req, res, result[0]);
             } else {
                 let body = {
-                    message: "Invalid Credentials",
+                    message: 'Email id not exists.',
                     status: 0
                 }
-               
                 return res.send(body)
             }
-            //Close connection
-           
         });
     });
 
-    app.post("/user/addExpense", function (req, res) {
+    app.post(process.env.ADD_EXPENSES_URL, function (req, res) {
         if (req.get("xAuthToken")) {
-            /* title: "Dinner at 31- 12 - 2016",
-                     paidBy : 1,
-                             contributor : [
-                                     {
-                                             contributerId: 3,
-                                             amount: 80
-                                     },
-                                     {
-                                             contributerId: 1,
-                                             amount: 40
-                                     },
-                                     {
-                                             contributerId: 2,
-                                             amount: 30
-                                     },
-                             ],
-                                     amount : 150,*/
+            /* {
+"title":"Dakshinyar",
+"paidBy":{"id":"5881c5a720135c1aec22c106", "name" : "Rajan"},
+"amount":450,
+"contributor":[{"name": "Deepak","id" :"5881c59620135c1aec22c105","amount": 250},{"name": "Rajan","id" :"5881c5a720135c1aec22c106","amount": 200}],
+"expenseType":"Dinner",
+"description":"Dinner on sunday",
+"date":"5-1-2017"
+}*/
 
-            if (!req.body.title || !req.body.paidBy || !req.body.contributor || !req.body.date || !req.body.amount || !req.body.expenseType || !req.body.description) {
+            if (!req.body.title) {
                 let body = {
                     message: "title missing",
                     status: 1
                 }
-                res.status = 400
+                res.status(400)
                 res.send(body)
             }
             else if (!req.body.contributor) {
@@ -354,7 +335,7 @@ let appRouter = function (app) {
                     message: "contributor missing",
                     status: 1
                 }
-                res.status = 400
+                res.status(400)
                 res.send(body)
             }
             else if (!req.body.date) {
@@ -362,7 +343,7 @@ let appRouter = function (app) {
                     message: "date missing",
                     status: 1
                 }
-                res.status = 400
+                res.status(400)
                 res.send(body)
             }
             else if (!req.body.expenseType) {
@@ -370,7 +351,7 @@ let appRouter = function (app) {
                     message: "expenseType missing",
                     status: 1
                 }
-                res.status = 400
+                res.status(400)
                 res.send(body)
             }
             else if (!req.body.paidBy) {
@@ -378,36 +359,36 @@ let appRouter = function (app) {
                     message: "paidBy missing",
                     status: 1
                 }
-                res.status = 400
+                res.status(400)
+                res.send(body)
+            }
+            else if (!req.body.amount) {
+                let body = {
+                    message: "amount missing",
+                    status: 1
+                }
+                res.status(400)
                 res.send(body)
             }
             else {
-                // Retrieve
-                let MongoClient = require('mongodb').MongoClient;
-                // Connect to the db
                 let expense = database.collection('Expense');
-                //Create some users
                 let addExpense = { title: req.body.title, paidBy: req.body.paidBy, contributor: req.body.contributor, date: req.body.date, amount: req.body.amount, expenseType: req.body.expenseType };
-                // Insert some users
                 expense.insert([addExpense], function (err, result) {
                     if (err) {
                         let body = {
                             message: "Error occurred while inserting",
                             status: 0
                         }
-                        res.status = 500;
+                        res.status(500);
                         res.send(body);
                     } else {
                         let insertedID = result.ops[0]._id;
                         let user = database.collection('User');
-                        let contributor = req.body.contributor.replace(/'/g, '"');
-                        console.log(contributor);
-                        // contributor = JSON.parse(contributor);
-                        // console.log(contributor);
-                        for (let i = 0; i < req.body.contributor.count; i++) {
-                            let userId = req.body.contributor[i].id
-                            console.log("UserId" + userId);
-                            user.findOneAndUpdate({ _id: userId }, { $push: { transactionId: insertedID } });
+                        let contributorArray = req.body.contributor
+                        let mongo = require('mongodb')
+                        for (let i = 0; i < req.body.contributor.length; i++) {
+                            var o_id = new mongo.ObjectID(req.body.contributor[i].id);
+                            console.log(user.findOneAndUpdate({ '_id': o_id }, { $push: { transactionId: insertedID } }));
                         }
                         let body = {
                             message: "Expense added successfully",
@@ -416,7 +397,7 @@ let appRouter = function (app) {
                         res.send(body)
                     }
                     //Close connection
-                   
+
                 });
 
                 return res
@@ -427,26 +408,30 @@ let appRouter = function (app) {
                 message: "Unauthorised Request",
                 status: 0
             }
-            res.status = 403;
+            res.status(403);
             return res.send(body)
         }
     });
 
-    function sendEmail(req, res, receiverEmail) {
+    function sendEmail(req, res, receiverData) {
         // Not the movie transporter!
         let transporter = nodemailer.createTransport({
             service: 'Gmail',
             auth: {
-                user: 'email', // Your email id
+                user: 'rajan.shah.sa@gmail.com', // Your email id
                 pass: 'password' // Your password
             }
         });
-        let text = 'Hello world from EMS \n\n';
+        let randomstring = require("randomstring");
+        let newPassword = randomstring.generate(5);
+        let data = req.body.emailId + '<>' + newPassword
+        let tokenForPasswordUpdate = jwt.sign({ data: data }, "secret", { expiresIn: 60 * 1 });
+        let text = 'Hello ' + receiverData.username + '\n\n Your new password is: ' + newPassword + '\n\n If you have requested for password change than please click on below link: \n\nhttp://' + process.env.SERVER_URL + ':' + process.env.SERVER_PORT + process.env.UPDATE_PASSWORD_URL + '?token=' + tokenForPasswordUpdate;
 
         let mailOptions = {
-            from: 'example@gmail.com', // sender address
-            to: receiverEmail, // list of receivers
-            subject: 'Email Example', // Subject line
+            from: 'no-reply@EMS.com', // sender address
+            to: receiverData.emailId, // list of receivers
+            subject: 'Change Password request', // Subject line
             text: text //, // plaintext body
             // html: '<b>Hello world ✔</b>' // You can choose to send an HTML body instead
         };
@@ -467,5 +452,34 @@ let appRouter = function (app) {
             };
         });
     }
+
+
+    app.get(process.env.UPDATE_PASSWORD_URL, function (req, res) {
+        let tokenverify = jwt.verify(req.query.token, process.env.SECRET_KEY, { ignoreExpiration: false }, function (err, token) {
+            console.log(err);
+            if (!err) {
+                let emailIdPassword = token.data;
+                let valueArray = emailIdPassword.split('<>')
+                let emailId = valueArray[0];
+                let password = valueArray[1];
+                let user = database.collection('User');
+                user.findOneAndUpdate({ emailId: emailId }, { $set: { password: password } });
+                let body = {
+                    message: 'Your password updated successfully'
+                }
+                res.send(body)
+            }
+            else {
+                let tokenExpired = err.message;
+                if (tokenExpired === 'jwt expired') {
+                    let body = {
+                        message: 'Sorry link expired'
+                    }
+                    res.send(body)
+                }
+            }
+        });
+        return res
+    });
 }
 module.exports = appRouter;
