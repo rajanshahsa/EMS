@@ -425,7 +425,7 @@ let appRouter = function (app) {
         let randomstring = require("randomstring");
         let newPassword = randomstring.generate(5);
         let data = req.body.emailId + '<>' + newPassword
-        let tokenForPasswordUpdate = jwt.sign({ data: data }, "secret", { expiresIn: 60 * 1 });
+        let tokenForPasswordUpdate = jwt.sign({ data: data }, "secret", { expiresIn: 60 * 15 });
         let text = 'Hello ' + receiverData.username + '\n\n Your new password is: ' + newPassword + '\n\n If you have requested for password change than please click on below link: \n\nhttp://' + process.env.SERVER_URL + ':' + process.env.SERVER_PORT + process.env.UPDATE_PASSWORD_URL + '?token=' + tokenForPasswordUpdate;
 
         let mailOptions = {
