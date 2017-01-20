@@ -3,6 +3,7 @@ let MongoClient = require('mongodb').MongoClient;
 let crypto = require("crypto");
 let nodemailer = require('nodemailer');
 let validator = require('validator');
+let mongo = require('mongodb');
 //Mongodb connection 
 let database = '';
 MongoClient.connect(process.env.MONGODB_URL, function (err, db) {
@@ -132,9 +133,6 @@ let appRouter = function (app) {
                     return res.status(403).send(body)
                 }
             });
-
-
-
         }
     });
 
@@ -191,7 +189,7 @@ let appRouter = function (app) {
                         message: "Error occurred",
                         status: 0
                     }
-                    req.status(500)
+                    res.status(500)
                     return res.send(body)
                 } else if (result.length) {
                     let data = {
@@ -234,7 +232,7 @@ let appRouter = function (app) {
                         message: "Error occurred",
                         status: 0
                     }
-                    req.status(500)
+                    res.status(500)
 
                     return res.send(body)
                 } else if (result.length) {
@@ -295,7 +293,7 @@ let appRouter = function (app) {
                     message: "Error occurred",
                     status: 0
                 }
-                req.status(500)
+                res.status(500)
 
                 return res.send(body)
             } else if (result.length) {
@@ -313,14 +311,14 @@ let appRouter = function (app) {
     app.post(process.env.ADD_EXPENSES_URL, function (req, res) {
         if (req.get("xAuthToken")) {
             /* {
-"title":"Dakshinyar",
-"paidBy":{"id":"5881c5a720135c1aec22c106", "name" : "Rajan"},
-"amount":450,
-"contributor":[{"name": "Deepak","id" :"5881c59620135c1aec22c105","amount": 250},{"name": "Rajan","id" :"5881c5a720135c1aec22c106","amount": 200}],
-"expenseType":"Dinner",
-"description":"Dinner on sunday",
-"date":"5-1-2017"
-}*/
+                "title":"Dakshinyar",
+                "paidBy":{"id":"5881c5a720135c1aec22c106", "name" : "Rajan"},
+                "amount":450,
+                "contributor":[{"name": "Deepak","id" :"5881c59620135c1aec22c105","amount": 250},{"name": "Rajan","id" :"5881c5a720135c1aec22c106","amount": 200}],
+                "expenseType":"Dinner",
+                "description":"Dinner on sunday",
+                "date":"5-1-2017"
+            }*/
 
             if (!req.body.title) {
                 let body = {
@@ -382,13 +380,12 @@ let appRouter = function (app) {
                         res.status(500);
                         res.send(body);
                     } else {
-                        let insertedID = result.ops[0]._id;
+                        let insertedID = result.insertedIds[0];
                         let user = database.collection('User');
                         let contributorArray = req.body.contributor
-                        let mongo = require('mongodb')
                         for (let i = 0; i < req.body.contributor.length; i++) {
                             var o_id = new mongo.ObjectID(req.body.contributor[i].id);
-                            console.log(user.findOneAndUpdate({ '_id': o_id }, { $push: { transactionId: insertedID } }));
+                            user.findOneAndUpdate({ '_id': o_id }, { $push: { transactionId: insertedID } });
                         }
                         let body = {
                             message: "Expense added successfully",
@@ -453,7 +450,6 @@ let appRouter = function (app) {
         });
     }
 
-
     app.get(process.env.UPDATE_PASSWORD_URL, function (req, res) {
         let tokenverify = jwt.verify(req.query.token, process.env.SECRET_KEY, { ignoreExpiration: false }, function (err, token) {
             console.log(err);
@@ -481,5 +477,160 @@ let appRouter = function (app) {
         });
         return res
     });
+
+    app.get(process.env.DASHBOARD_URL, function (req, res) {
+        if (req.get("xAuthToken")) {
+            let token = req.get("xAuthToken")
+            let decoded = jwt.decode(token, {
+                complete: true
+            });
+            let user = database.collection('User');
+            console.log(decoded.payload);
+            let result = user.find({ emailId: decoded.payload }).toArray(function (err, result) {
+                if (err) {
+                    let body = {
+                        message: "Error occurred finding user",
+                        status: 0
+                    }
+                    res.status(500)
+                    res.send(body)
+                } else if (result.length) {
+                    let objectId = result[0]._id
+                    let expenses = database.collection('Expense');
+                    expenses.find({ contributor: { $exists: objectId } }).toArray(function (err, result) {
+                        if (err) {
+                            console.log(err)
+                            let body = {
+                                message: "Error occurred find transaction",
+                                status: 0
+                            }
+                            res.status(500)
+                            res.send(body)
+                        } else if (result.length) {
+
+                            let expenseArray = []
+                            for (var i = 0; i < result.length; i++) {
+                                let expense = {
+                                    id: result[i]._id,
+                                    title: result[i].title,
+                                    paidBy: result[i].paidBy,
+                                    amount: result[i].amount,
+                                    expenseType: result[i].expenseType,
+                                    description: result[i].description,
+                                    data: result[i].date,
+                                    contributor: result[i].contributor
+                                }
+                                expenseArray.push(expense)
+                            }
+                            res.send(expenseArray)
+                        }
+                        else {
+
+                        }
+                    });
+                } else {
+                    let body = {
+                        message: 'No user found',
+                        status: 0
+                    }
+                    res.send(body)
+                }
+            });
+        } else {
+            let body = {
+                message: "Unauthorised Request",
+                status: 0
+            }
+            res.status(403);
+            res.send(body)
+        }
+        return res
+    });
+
+
+    app.post(process.env.UPDATE_EXPENSES_URL, function (req, res) {
+        if (req.get("xAuthToken")) {
+            console.log(req.body);
+            if (!req.body.expenseId) {
+                let body = {
+                    message: "Expense Id missing",
+                    status: 1
+                }
+                res.status(400)
+                res.send(body)
+            }
+            else if (!req.body.title) {
+                let body = {
+                    message: "title missing",
+                    status: 1
+                }
+                res.status(400)
+                res.send(body)
+            }
+            else if (!req.body.contributor) {
+                let body = {
+                    message: "contributor missing",
+                    status: 1
+                }
+                res.status(400)
+                res.send(body)
+            }
+            else if (!req.body.date) {
+                let body = {
+                    message: "date missing",
+                    status: 1
+                }
+                res.status(400)
+                res.send(body)
+            }
+            else if (!req.body.expenseType) {
+                let body = {
+                    message: "expenseType missing",
+                    status: 1
+                }
+                res.status(400)
+                res.send(body)
+            }
+            else if (!req.body.paidBy) {
+                let body = {
+                    message: "paidBy missing",
+                    status: 1
+                }
+                res.status(400)
+                res.send(body)
+            }
+            else if (!req.body.amount) {
+                let body = {
+                    message: "amount missing",
+                    status: 1
+                }
+                res.status(400)
+                res.send(body)
+            }
+            else {
+                let expense = database.collection('Expense');
+                let updateExpense = { title: req.body.title, paidBy: req.body.paidBy, contributor: req.body.contributor, date: req.body.date, amount: req.body.amount, expenseType: req.body.expenseType };
+                var o_id = new mongo.ObjectID(req.body.expenseId);
+                console.log(o_id);
+                expense.findOneAndUpdate({ '_id': o_id }, { $set: updateExpense });
+                let body = {
+                    message: "Expense Update successfully",
+                    status: 0
+                }
+                res.send(body)
+            }
+        }
+        else {
+            let body = {
+                message: "Unauthorised Request",
+                status: 0
+            }
+            res.status(403);
+            res.send(body)
+        }
+        return res
+    });
+
+
 }
 module.exports = appRouter;
