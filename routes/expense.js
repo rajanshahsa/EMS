@@ -67,7 +67,7 @@ let appRouter = function (app) {
             }
             else {
                 let expense = database.collection('Expense');
-                let addExpense = { title: req.body.title, paidBy: req.body.paidBy, contributor: req.body.contributor, date: req.body.date, amount: req.body.amount, expenseType: req.body.expenseType };
+                let addExpense = { title: req.body.title, paidBy: req.body.paidBy, contributor: req.body.contributor, date: req.body.date, amount: req.body.amount, expenseType: req.body.expenseType, creditedBy : [] , debitedBy : []};
                 expense.insert([addExpense], function (err, result) {
                     if (err) {
                         let body = {

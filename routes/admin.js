@@ -26,7 +26,8 @@ let appRouter = function (app) {
                 } else if (result.length) {
                     let expenseArray = []
                     for (var i = 0; i < result.length; i++) {
-                        let expense = {
+                 
+                         let expense = {
                             id: result[i]._id,
                             title: result[i].title,
                             paidBy: result[i].paidBy,
@@ -34,9 +35,9 @@ let appRouter = function (app) {
                             expenseType: result[i].expenseType,
                             description: result[i].description,
                             data: result[i].date,
-                            contributor: result[i].contributor,
+                            contributor: result[i].contributor, 
                             creditedBy : result[i].creditedBy,
-                            debitedBy : result[i],debitedBy
+                            debitedBy : result[i].debitedBy
                         }
                         expenseArray.push(expense);
                     }
