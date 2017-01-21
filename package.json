@@ -23,6 +23,8 @@
     "body-parser": "^1.16.0",
     "dotenv": "^4.0.0",
     "jsonwebtoken": "^7.2.1",
+    "promise": "^7.1.1",
+    "q": "^1.4.1",
     "randomstring": "^1.1.5",
     "sha256": "^0.2.0"
   }

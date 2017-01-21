@@ -1,20 +1,9 @@
 let jwt = require('jsonwebtoken');
-let MongoClient = require('mongodb').MongoClient;
 let crypto = require("crypto");
 let nodemailer = require('nodemailer');
 let validator = require('validator');
 let mongo = require('mongodb');
-//Mongodb connection 
-let database = '';
-MongoClient.connect(process.env.MONGODB_URL, function (err, db) {
-    if (!err) {
-        console.log('connected to database');
-        database = db
-    } else {
-        console.log('cannot connect to database', err);
-        server.close()
-    }
-});
+
 
 let appRouter = function (app) {
 
@@ -33,56 +22,63 @@ let appRouter = function (app) {
                 status: 0
             }
             res.status(400)
-            return res.send(body);
+            res.send(body);
         } else if (!req.body.password) {
             let body = {
                 message: "Password required",
                 status: 0
             }
             res.status(400)
-            return res.send(body);
+            res.send(body);
         } else if (!req.body.sex) {
             let body = {
                 message: "Sex required",
                 status: 0
             }
             res.status(400)
-            return res.send(body);
+            res.send(body);
         } else if (!req.body.mobileNo) {
             let body = {
                 message: "Mobile No required",
                 status: 0
             }
             res.status(400)
-            return res.send(body);
+            res.send(body);
         } else if (!req.body.emailId) {
             let body = {
                 message: "E-Mail Id required",
                 status: 0
             }
             res.status(400)
-            return res.send(body);
+            res.send(body);
         } else if (!validator.isEmail(req.body.emailId)) {
             let body = {
                 message: "Invalid E-Mail Id",
                 status: 0
             }
             res.status(400)
-            return res.send(body);
+            res.send(body);
+        } else if (!req.body.userType) {
+            let body = {
+                message: "userType required",
+                status: 0
+            }
+            res.status(400)
+            res.send(body);
         } else if (req.body.dob === Date) {
             let body = {
                 message: "Type of date of birth is invalid",
                 status: 0
             }
             res.status(400)
-            return res.send(body);
+            res.send(body);
         } else if (req.body.mobileNo === Number) {
             let body = {
                 message: "Type of mobile Number is invalid",
                 status: 0
             }
             res.status(400)
-            return res.send(body);
+            res.send(body);
         } else {
 
             let collection = database.collection('User');
@@ -98,7 +94,8 @@ let appRouter = function (app) {
                 dob: req.body.dob,
                 mobileNo: req.body.mobileNo,
                 emailId: req.body.emailId,
-                transactionId: []
+                transactionId: [],
+                userType: req.body.userType
             };
             collection.find({ emailId: req.body.emailId }).count(function (e, count) {
                 if (count <= 0) {
@@ -122,7 +119,7 @@ let appRouter = function (app) {
                                 message: "User created",
                                 status: 1
                             }
-                            return res.send(body)
+                            res.send(body)
                         }
                     });
                 } else {
@@ -130,10 +127,11 @@ let appRouter = function (app) {
                         message: "User already exists",
                         status: 0
                     }
-                    return res.status(403).send(body)
+                    res.status(403).send(body)
                 }
             });
         }
+        return res
     });
 
     app.post(process.env.LOGIN_URL, function (req, res) {
@@ -172,6 +170,7 @@ let appRouter = function (app) {
             return res.send(body);
         } else {
             let token = jwt.sign(req.body.emailId, "secret");
+            console.log(typeof(mongoClient));
             let EMS = database.collection('User');
             let sha256 = crypto.createHash("sha256");
             sha256.update(req.body.password, "utf8"); //utf8 here
@@ -306,108 +305,6 @@ let appRouter = function (app) {
                 return res.send(body)
             }
         });
-    });
-
-    app.post(process.env.ADD_EXPENSES_URL, function (req, res) {
-        if (req.get("xAuthToken")) {
-            /* {
-                "title":"Dakshinyar",
-                "paidBy":{"id":"5881c5a720135c1aec22c106", "name" : "Rajan"},
-                "amount":450,
-                "contributor":[{"name": "Deepak","id" :"5881c59620135c1aec22c105","amount": 250},{"name": "Rajan","id" :"5881c5a720135c1aec22c106","amount": 200}],
-                "expenseType":"Dinner",
-                "description":"Dinner on sunday",
-                "date":"5-1-2017"
-            }*/
-
-            if (!req.body.title) {
-                let body = {
-                    message: "title missing",
-                    status: 1
-                }
-                res.status(400)
-                res.send(body)
-            }
-            else if (!req.body.contributor) {
-                let body = {
-                    message: "contributor missing",
-                    status: 1
-                }
-                res.status(400)
-                res.send(body)
-            }
-            else if (!req.body.date) {
-                let body = {
-                    message: "date missing",
-                    status: 1
-                }
-                res.status(400)
-                res.send(body)
-            }
-            else if (!req.body.expenseType) {
-                let body = {
-                    message: "expenseType missing",
-                    status: 1
-                }
-                res.status(400)
-                res.send(body)
-            }
-            else if (!req.body.paidBy) {
-                let body = {
-                    message: "paidBy missing",
-                    status: 1
-                }
-                res.status(400)
-                res.send(body)
-            }
-            else if (!req.body.amount) {
-                let body = {
-                    message: "amount missing",
-                    status: 1
-                }
-                res.status(400)
-                res.send(body)
-            }
-            else {
-                let expense = database.collection('Expense');
-                let addExpense = { title: req.body.title, paidBy: req.body.paidBy, contributor: req.body.contributor, date: req.body.date, amount: req.body.amount, expenseType: req.body.expenseType };
-                expense.insert([addExpense], function (err, result) {
-                    if (err) {
-                        let body = {
-                            message: "Error occurred while inserting",
-                            status: 0
-                        }
-                        res.status(500);
-                        res.send(body);
-                    } else {
-                        let insertedID = result.insertedIds[0];
-                        let user = database.collection('User');
-                        let contributorArray = req.body.contributor
-                        for (let i = 0; i < req.body.contributor.length; i++) {
-                            var o_id = new mongo.ObjectID(req.body.contributor[i].id);
-                            user.findOneAndUpdate({ '_id': o_id }, { $push: { transactionId: insertedID } });
-                        }
-                        let body = {
-                            message: "Expense added successfully",
-                            status: 1
-                        }
-                        res.send(body)
-                    }
-                    //Close connection
-
-                });
-
-                return res
-            }
-        }
-        else {
-            let body = {
-                message: "Unauthorised Request",
-                status: 0
-            }
-            res.status(403);
-            return res.send(body)
-        }
     });
 
     function sendEmail(req, res, receiverData) {
@@ -546,91 +443,5 @@ let appRouter = function (app) {
         }
         return res
     });
-
-
-    app.post(process.env.UPDATE_EXPENSES_URL, function (req, res) {
-        if (req.get("xAuthToken")) {
-            console.log(req.body);
-            if (!req.body.expenseId) {
-                let body = {
-                    message: "Expense Id missing",
-                    status: 1
-                }
-                res.status(400)
-                res.send(body)
-            }
-            else if (!req.body.title) {
-                let body = {
-                    message: "title missing",
-                    status: 1
-                }
-                res.status(400)
-                res.send(body)
-            }
-            else if (!req.body.contributor) {
-                let body = {
-                    message: "contributor missing",
-                    status: 1
-                }
-                res.status(400)
-                res.send(body)
-            }
-            else if (!req.body.date) {
-                let body = {
-                    message: "date missing",
-                    status: 1
-                }
-                res.status(400)
-                res.send(body)
-            }
-            else if (!req.body.expenseType) {
-                let body = {
-                    message: "expenseType missing",
-                    status: 1
-                }
-                res.status(400)
-                res.send(body)
-            }
-            else if (!req.body.paidBy) {
-                let body = {
-                    message: "paidBy missing",
-                    status: 1
-                }
-                res.status(400)
-                res.send(body)
-            }
-            else if (!req.body.amount) {
-                let body = {
-                    message: "amount missing",
-                    status: 1
-                }
-                res.status(400)
-                res.send(body)
-            }
-            else {
-                let expense = database.collection('Expense');
-                let updateExpense = { title: req.body.title, paidBy: req.body.paidBy, contributor: req.body.contributor, date: req.body.date, amount: req.body.amount, expenseType: req.body.expenseType };
-                var o_id = new mongo.ObjectID(req.body.expenseId);
-                console.log(o_id);
-                expense.findOneAndUpdate({ '_id': o_id }, { $set: updateExpense });
-                let body = {
-                    message: "Expense Update successfully",
-                    status: 0
-                }
-                res.send(body)
-            }
-        }
-        else {
-            let body = {
-                message: "Unauthorised Request",
-                status: 0
-            }
-            res.status(403);
-            res.send(body)
-        }
-        return res
-    });
-
-
 }
 module.exports = appRouter;
