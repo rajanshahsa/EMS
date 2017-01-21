@@ -2,7 +2,6 @@ let jwt = require('jsonwebtoken');
 let crypto = require("crypto");
 let nodemailer = require('nodemailer');
 let validator = require('validator');
-let mongo = require('mongodb');
 
 
 let appRouter = function (app) {
@@ -164,6 +163,31 @@ let appRouter = function (app) {
         return res
     });
 
+    / user login API /
+    /**
+     * @api {post} /user/login Login User 
+     * @apiName login  
+     * @apiGroup User
+     * @apiVersion 0.1.0
+     * @apiParam {String} emailId  
+     * @apiParam {String} Password  
+     * 
+     * @apiSuccessExample Success-Response 
+     * 
+     * {
+        "xAuthToken": "eyJhbGciOiJIUzI1NiJ9.YXNoaWxAZ21haWwuY29t.NADjv0gRjYaQhXLop1COv800lWF8xdVblZzB3Y0c_20",
+        "data": {
+             "userId": "58832f2d9491a65e5584f840",
+             "username": "Ashil",
+             "emailId": "ashil@gmail.com",
+              "sex": "M",
+              "dob": "1990-10-19T00:00Z",
+              "mobileNo": 9377929445
+        },
+        "message": "Success",
+         "status": 1
+        }
+     * */
     app.post(process.env.LOGIN_URL, function (req, res) {
         /*
         "{ message : ""Success"", status : 1, x-auth-token : XASDXSDFfdsfs, data : {
@@ -252,6 +276,18 @@ let appRouter = function (app) {
 
     });
 
+
+    / user getUser API /
+    /**
+     * @api {get} /user/getUser Login User 
+     * @apiName login  
+     * @apiGroup User
+     * @apiVersion 0.1.0
+     * 
+     * @apiSuccessExample Success-Response 
+     * 
+     * list of user
+     * */
     app.get(process.env.GET_USER, function (req, res) {
         if (req.get("xAuthToken")) {
             let EMS = database.collection('User');
@@ -313,6 +349,21 @@ let appRouter = function (app) {
 
     });
 
+    / user forgotPassword API /
+    /**
+     * @api {post} /user/forgotPassword Login User 
+     * @apiName login  
+     * @apiGroup User
+     * @apiVersion 0.1.0
+     * @apiParam {String} emailId  
+     * 
+     * @apiSuccessExample Success-Response 
+     * 
+     * {
+                    message: "Email sent successfully.",
+                    status: 0
+                }
+     * */
     app.post(process.env.FORGET_PASSWORD_URL, function (req, res) {
         let EMS = database.collection('User');
         console.log(req.body.emailId);
@@ -377,6 +428,18 @@ let appRouter = function (app) {
         });
     }
 
+
+    / user updatePassword API /
+    /**
+     * @api {get} /user/updatePassword Login User 
+     * @apiName login  
+     * @apiGroup User
+     * @apiVersion 0.1.0
+     * 
+     * @apiSuccessExample Success-Response 
+     * 
+     * 
+     * */
     app.get(process.env.UPDATE_PASSWORD_URL, function (req, res) {
         let tokenverify = jwt.verify(req.query.token, process.env.SECRET_KEY, { ignoreExpiration: false }, function (err, token) {
             console.log(err);
@@ -405,6 +468,17 @@ let appRouter = function (app) {
         return res
     });
 
+    / user dashboard API /
+    /**
+     * @api {get} /user/dashboard Login User 
+     * @apiName login  
+     * @apiGroup User
+     * @apiVersion 0.1.0
+     * 
+     * @apiSuccessExample Success-Response 
+     * 
+     * list of transaction made by user
+     * */
     app.get(process.env.DASHBOARD_URL, function (req, res) {
         if (req.get("xAuthToken")) {
             let token = req.get("xAuthToken")

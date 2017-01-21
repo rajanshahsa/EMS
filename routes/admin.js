@@ -6,6 +6,18 @@ let mongo = require('mongodb');
 
 let appRouter = function (app) {
 
+    / admin dashboard API /
+    /**
+     * @api {get} /admin/getAllTransaction Login User 
+     * @apiName getAllTransaction  
+     * @apiGroup Admin
+     * @apiVersion 0.1.0
+     * 
+     * @apiSuccessExample Success-Response 
+     * 
+     * list of transaction made by users
+     * */
+
     app.get(process.env.GET_ALL_TRANSACTION_URL, function (req, res) {
         if (req.get("xAuthToken")) {
             let token = req.get("xAuthToken")
@@ -26,8 +38,8 @@ let appRouter = function (app) {
                 } else if (result.length) {
                     let expenseArray = []
                     for (var i = 0; i < result.length; i++) {
-                 
-                         let expense = {
+
+                        let expense = {
                             id: result[i]._id,
                             title: result[i].title,
                             paidBy: result[i].paidBy,
@@ -35,9 +47,9 @@ let appRouter = function (app) {
                             expenseType: result[i].expenseType,
                             description: result[i].description,
                             data: result[i].date,
-                            contributor: result[i].contributor, 
-                            creditedBy : result[i].creditedBy,
-                            debitedBy : result[i].debitedBy
+                            contributor: result[i].contributor,
+                            creditedBy: result[i].creditedBy,
+                            debitedBy: result[i].debitedBy
                         }
                         expenseArray.push(expense);
                     }
@@ -71,6 +83,17 @@ let appRouter = function (app) {
 
     });
 
+    / admin updateExpense API /
+    /**
+     * @api {get} /admin/updateExpense Login User 
+     * @apiName updateExpense  
+     * @apiGroup Admin
+     * @apiVersion 0.1.0
+     * 
+     * @apiSuccessExample Success-Response 
+     * 
+     * list of transaction made by users
+     * */
     app.post(process.env.ADMIN_UPDATE_EXPENSES_URL, function (req, res) {
         if (req.get("xAuthToken")) {
             if (!req.body.expenseId) {
