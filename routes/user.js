@@ -7,6 +7,36 @@ let mongo = require('mongodb');
 
 let appRouter = function (app) {
 
+    / user Sign API /
+    /**
+     * @api {post} /user/signUp Login User 
+     * @apiName signUp  
+     * @apiGroup User
+     * @apiVersion 0.1.0
+     * @apiParam {String} userName 
+     * @apiParam {String} emailId  
+     * @apiParam {String} sex  
+     * @apiParam {String} dob  
+     * @apiParam {String} mobileNo  
+     * @apiParam {String} userType  
+     * 
+     * @apiSuccessExample Success-Response 
+     * 
+     * {
+        "xAuthToken": "eyJhbGciOiJIUzI1NiJ9.YXNoaWxAZ21haWwuY29t.NADjv0gRjYaQhXLop1COv800lWF8xdVblZzB3Y0c_20",
+        "data": {
+             "userId": "58832f2d9491a65e5584f840",
+             "username": "Ashil",
+             "emailId": "ashil@gmail.com",
+              "sex": "M",
+              "dob": "1990-10-19T00:00Z",
+              "mobileNo": 9377929445
+        },
+        "message": "User created",
+         "status": 1
+        }
+     * */
+
     app.post(process.env.SIGNUP_URL, function (req, res) {
 
         /*
@@ -170,7 +200,7 @@ let appRouter = function (app) {
             return res.send(body);
         } else {
             let token = jwt.sign(req.body.emailId, "secret");
-            console.log(typeof(mongoClient));
+            console.log(typeof (mongoClient));
             let EMS = database.collection('User');
             let sha256 = crypto.createHash("sha256");
             sha256.update(req.body.password, "utf8"); //utf8 here
