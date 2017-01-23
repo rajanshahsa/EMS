@@ -24,7 +24,6 @@ let appRouter = function (app) {
             let decoded = jwt.decode(token, {
                 complete: true
             });
-            console.log(decoded.payload);
             let expense = database.collection('Expense');
             expense.find({}).toArray(function (err, result) {
                 if (err) {
@@ -38,7 +37,6 @@ let appRouter = function (app) {
                 } else if (result.length) {
                     let expenseArray = []
                     for (var i = 0; i < result.length; i++) {
-
                         let expense = {
                             id: result[i]._id,
                             title: result[i].title,
@@ -51,7 +49,28 @@ let appRouter = function (app) {
                             creditedBy: result[i].creditedBy,
                             debitedBy: result[i].debitedBy
                         }
-                        expenseArray.push(expense);
+                        let index = 0
+                        for (var j = 0; j < result[i].contributor.length; j++) {
+                            let contributorId = JSON.stringify(result[i].contributor[j].id)
+                            let contributorAmount = JSON.stringify(result[i].contributor[j].amount)
+                            for (var k = 0; k < result[i].creditedBy.length; k++) {
+                                let creditedId = JSON.stringify(result[i].creditedBy[k].id)
+                                let creditedAmount = JSON.stringify(result[i].creditedBy[k].amount)
+                                if (contributorId == creditedId && contributorAmount == creditedAmount) {
+                                    index += 1
+                                }
+                            }
+                            for (var l = 0; l < result[i].debitedBy.length; l++) {
+                                let debitedId = JSON.stringify(result[i].debitedBy[l].id)
+                                let debitedAmount = JSON.stringify(result[i].debitedBy[l].amount)
+                                if (contributorId == debitedId && contributorAmount == debitedAmount) {
+                                    index += 1
+                                }
+                            }
+                        }
+                        if (index != result[i].contributor.length) {
+                            expenseArray.push(expense);
+                        }
                     }
                     let body = {
                         data: expenseArray,
