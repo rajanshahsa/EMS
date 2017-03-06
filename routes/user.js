@@ -45,7 +45,9 @@ let appRouter = function (app) {
                 dob : 19-10-1990,
                 mobileNo : 9377929445
         */
+        console.log(req.body)
         if (!req.body.username) {
+            console.log("username required")
             let body = {
                 message: "username required",
                 status: 0
@@ -53,6 +55,7 @@ let appRouter = function (app) {
             res.status(400)
             res.send(body);
         } else if (!req.body.password) {
+            console.log("password required")
             let body = {
                 message: "Password required",
                 status: 0
@@ -60,6 +63,7 @@ let appRouter = function (app) {
             res.status(400)
             res.send(body);
         } else if (!req.body.sex) {
+            console.log("sex required")
             let body = {
                 message: "Sex required",
                 status: 0
@@ -67,6 +71,7 @@ let appRouter = function (app) {
             res.status(400)
             res.send(body);
         } else if (!req.body.mobileNo) {
+            console.log("mobileNo required")
             let body = {
                 message: "Mobile No required",
                 status: 0
@@ -74,6 +79,7 @@ let appRouter = function (app) {
             res.status(400)
             res.send(body);
         } else if (!req.body.emailId) {
+            console.log("Email required")
             let body = {
                 message: "E-Mail Id required",
                 status: 0
@@ -81,6 +87,7 @@ let appRouter = function (app) {
             res.status(400)
             res.send(body);
         } else if (!validator.isEmail(req.body.emailId)) {
+            console.log("Email Invalid")
             let body = {
                 message: "Invalid E-Mail Id",
                 status: 0
@@ -88,6 +95,7 @@ let appRouter = function (app) {
             res.status(400)
             res.send(body);
         } else if (!req.body.userType) {
+            console.log("userType required")
             let body = {
                 message: "userType required",
                 status: 0
@@ -95,6 +103,7 @@ let appRouter = function (app) {
             res.status(400)
             res.send(body);
         } else if (req.body.dob === Date) {
+            console.log("dob required")
             let body = {
                 message: "Type of date of birth is invalid",
                 status: 0
@@ -102,6 +111,7 @@ let appRouter = function (app) {
             res.status(400)
             res.send(body);
         } else if (req.body.mobileNo === Number) {
+            console.log("mobileNo number required")
             let body = {
                 message: "Type of mobile Number is invalid",
                 status: 0
@@ -131,6 +141,7 @@ let appRouter = function (app) {
                     // Insert some users
                     collection.insert([user1], function (err, result) {
                         if (err) {
+                            console.log("Success")
                             console.log(err);
                         } else {
                             let data = {
@@ -142,6 +153,7 @@ let appRouter = function (app) {
                                 mobileNo: req.body.mobileNo,
                                 userId: result.ops[0]._id
                             }
+                            console.log("Success")
                             let body = {
                                 xAuthToken: token,
                                 data: data,
@@ -152,6 +164,7 @@ let appRouter = function (app) {
                         }
                     });
                 } else {
+                    console.log("Success")
                     let body = {
                         message: "User already exists",
                         status: 0
@@ -224,12 +237,10 @@ let appRouter = function (app) {
             return res.send(body);
         } else {
             let token = jwt.sign(req.body.emailId, "secret");
-            console.log(typeof (mongoClient));
             let EMS = database.collection('User');
             let sha256 = crypto.createHash("sha256");
             sha256.update(req.body.password, "utf8"); //utf8 here
             let encryptedPassword = sha256.digest("hex");
-            console.log(encryptedPassword);
             let result = EMS.find({
                 $and: [{
                     emailId: req.body.emailId
@@ -307,7 +318,7 @@ let appRouter = function (app) {
                     });
                     let userArray = []
                     for (let i = 0; i < result.length; i++) {
-                        if (decoded.payload !== result[i].emailId) {
+                      //  if (decoded.payload !== result[i].emailId) {
                             let data = {
                                 username: result[i].username,
                                 emailId: result[i].emailId,
@@ -317,7 +328,7 @@ let appRouter = function (app) {
                                 userId: result[i]._id
                             }
                             userArray.push(data);
-                        }
+                        //}
                     }
 
                     let body = {
