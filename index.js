@@ -11,6 +11,7 @@ app.use(bodyParser.urlencoded({
 require("./routes/user.js")(app);
 require("./routes/expense.js")(app);
 require("./routes/admin")(app);
+require("./routes/aws.js")(app);
 
 let MongoClient = require('mongodb');
 global.database = ''
