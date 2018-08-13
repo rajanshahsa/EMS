@@ -16,7 +16,7 @@ let appRouter = function (app) {
      * @apiSuccessExample Success-Response 
      * 
      * list of transaction made by users
-     * */
+     * */ 
 
     app.get(process.env.GET_ALL_TRANSACTION_URL, function (req, res) {
         if (req.get("xAuthToken")) {
