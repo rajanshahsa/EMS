@@ -1,7 +1,4 @@
 let jwt = require('jsonwebtoken');
-let crypto = require("crypto");
-let nodemailer = require('nodemailer');
-let validator = require('validator');
 let mongo = require('mongodb');
 
 let appRouter = function (app) {
